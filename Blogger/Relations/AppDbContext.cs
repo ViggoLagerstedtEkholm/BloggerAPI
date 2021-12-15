@@ -1,9 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Blogger.Relations;
+using Microsoft.EntityFrameworkCore;
 
 namespace UniShareAPI.Models.Relations
 {
     public class AppDbContext : DbContext
     {
+        public DbSet<Blog>? Blog { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options): base(options)
         {}
