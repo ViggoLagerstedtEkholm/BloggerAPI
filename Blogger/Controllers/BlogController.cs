@@ -23,7 +23,7 @@ namespace Blogger.Controllers
         {
             var resultsPerPage = filterRequest.ResultsPerPage;
             var page = filterRequest.Page;
-            var search = filterRequest.Search;
+            var search = filterRequest.Search ?? "";
 
             IEnumerable<Blog> blogs = _appDbContext.Blog
                 .Where(blog => 
@@ -46,6 +46,17 @@ namespace Blogger.Controllers
         {
             Blog? blog = _appDbContext.Blog?.Where(blog => blog.Id.Equals(id)).FirstOrDefault();
 
+            if (blog == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(blog);
+        }
+
+        [HttpPost(Name = "Blog/Upload")]
+        public IActionResult GetBlog([FromBody] BlogRequest blogRequest)
+        {
             if (blog == null)
             {
                 return NotFound();
