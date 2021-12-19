@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Blogger.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace Blogger.DTO
 {
@@ -12,5 +13,11 @@ namespace Blogger.DTO
 
         [Required(ErrorMessage = "Secret is required.")]
         public string Secret { get; set; }
+
+        [Required(ErrorMessage = "Please select a file.")]
+        [DataType(DataType.Upload)]
+        [MaxFileSize(5 * 1024 * 1024)]
+        [AllowedExtensions(new string[] { ".jpg", ".jpeg", ".PNG", ".png", ".gif", ".GIF" })]
+        public IFormFile Image { get; set; }
     }
 }

@@ -21,24 +21,42 @@ namespace Blogger.Controllers
         [HttpPost("Search")]
         public IActionResult Search([FromBody] FilterRequest filterRequest)
         {
-            var resultsPerPage = 20;
+            var resultsPerPage = 10;
             var page = filterRequest.Page;
             var search = filterRequest.Search ?? "";
+            IEnumerable<Blog> blogs = null;
 
-            IEnumerable<Blog> blogs = _appDbContext.Blog
-                .Where(blog => 
-                blog.Title.Contains(search) || 
-                blog.Text.Contains(search) || 
-                blog.Date.ToString().Contains(search))
-                .OrderByDescending(blog => blog.Date);
+            switch (filterRequest.Order)
+            {
+                case "Descending":
+                    blogs = _appDbContext.Blog
+                       .Where(blog =>
+                       blog.Title.Contains(search) ||
+                       blog.Text.Contains(search) ||
+                       blog.Date.ToString().Contains(search))
+                       .OrderByDescending(blog => blog.Date);
+                    break;
+                case "Ascending":
+                    blogs = _appDbContext.Blog
+                       .Where(blog =>
+                       blog.Title.Contains(search) ||
+                       blog.Text.Contains(search) ||
+                       blog.Date.ToString().Contains(search))
+                       .OrderBy(blog => blog.Date);
+                    break;
+            }
+   
 
             Pagination pagination = CalculateOffsets(blogs.Count(), page, resultsPerPage);
             int firstIndex = pagination.PageFirstResultIndex;
             int secondIndex = pagination.ResultsPerPage;
 
             List<Blog> filteredResults = blogs.Skip(firstIndex).Take(secondIndex).ToList();
+            SearchResult searchResult = new();
+            searchResult.Pagination = pagination;
+            searchResult.Blogs = filteredResults;
 
-            return Ok(filteredResults);
+            return Ok(searchResult);
         }
 
         [HttpGet("Get/{id}")]
@@ -64,7 +82,7 @@ namespace Blogger.Controllers
         }
 
         [HttpPost("Upload")]
-        public async Task<IActionResult> UploadBlogAsync([FromBody] BlogRequest blogRequest)
+        public async Task<IActionResult> UploadBlogAsync([FromForm] BlogRequest blogRequest)
         {
             var Secret = blogRequest.Secret;
             Secret secret = _appDbContext.Secrets.FirstOrDefault(secret => secret.Token.Equals(Secret));
@@ -90,11 +108,15 @@ namespace Blogger.Controllers
                 return Unauthorized("Invalid secret.");
             }
 
+            using var stream = new MemoryStream();
+            blogRequest.Image.CopyTo(stream);
+            var fileBytes = stream.ToArray();
+
             Blog blog = new();
             blog.Date = DateTime.Now;
             blog.Title = blogRequest.Title;
             blog.Text = blogRequest.Body;
-            blog.Image = null;
+            blog.Image = fileBytes;
 
             _appDbContext.Blog.Add(blog);
             await _appDbContext.SaveChangesAsync();
