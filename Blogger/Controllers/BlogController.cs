@@ -18,10 +18,10 @@ namespace Blogger.Controllers
             _appDbContext = appDbContext;
         }
 
-        [HttpPost(Name = "Search")]
-        public IEnumerable<Blog> GetBlogs([FromBody] FilterRequest filterRequest)
+        [HttpPost("Search")]
+        public IActionResult Search([FromBody] FilterRequest filterRequest)
         {
-            var resultsPerPage = filterRequest.ResultsPerPage;
+            var resultsPerPage = 20;
             var page = filterRequest.Page;
             var search = filterRequest.Search ?? "";
 
@@ -38,10 +38,10 @@ namespace Blogger.Controllers
 
             List<Blog> filteredResults = blogs.Skip(firstIndex).Take(secondIndex).ToList();
 
-            return filteredResults;
+            return Ok(filteredResults);
         }
 
-        [HttpGet(Name = "Blog/{id}")]
+        [HttpGet("Get/{id}")]
         public IActionResult GetBlog(int id)
         {
             Blog? blog = _appDbContext.Blog?.Where(blog => blog.Id.Equals(id)).FirstOrDefault();
@@ -54,15 +54,52 @@ namespace Blogger.Controllers
             return Ok(blog);
         }
 
-        [HttpPost(Name = "Blog/Upload")]
-        public IActionResult GetBlog([FromBody] BlogRequest blogRequest)
+        private static bool CheckIfLocked(BruteForcePrevent bruteForce)
         {
-            if (blog == null)
+            if(bruteForce.Attempts >= bruteForce.Tries)
             {
-                return NotFound();
+                return true;
+            }
+            return false;
+        }
+
+        [HttpPost("Upload")]
+        public async Task<IActionResult> UploadBlogAsync([FromBody] BlogRequest blogRequest)
+        {
+            var Secret = blogRequest.Secret;
+            Secret secret = _appDbContext.Secrets.FirstOrDefault(secret => secret.Token.Equals(Secret));
+            BruteForcePrevent bruteForce = _appDbContext.BruteForcePrevent.First();
+            bool isLocked = CheckIfLocked(bruteForce);
+
+            if (isLocked)
+            {
+                return Unauthorized(bruteForce.Message);
             }
 
-            return Ok(blog);
+            if (secret == null)
+            {
+                bruteForce.Attempts += 1;
+                _appDbContext.BruteForcePrevent.Update(bruteForce);
+                await _appDbContext.SaveChangesAsync();
+
+                if (CheckIfLocked(bruteForce))
+                {
+                    return Unauthorized(bruteForce.Message);
+                }
+
+                return Unauthorized("Invalid secret.");
+            }
+
+            Blog blog = new();
+            blog.Date = DateTime.Now;
+            blog.Title = blogRequest.Title;
+            blog.Text = blogRequest.Body;
+            blog.Image = null;
+
+            _appDbContext.Blog.Add(blog);
+            await _appDbContext.SaveChangesAsync();
+
+            return Ok();
         }
 
         private static Pagination CalculateOffsets(int count, int page, int resultPerPage)

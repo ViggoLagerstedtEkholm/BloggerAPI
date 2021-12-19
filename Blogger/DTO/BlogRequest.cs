@@ -4,13 +4,13 @@ namespace Blogger.DTO
 {
     public class BlogRequest
     {
-        [Required]
+        [Required(ErrorMessage = "Title is required.")]
         public string Title { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Body is required.")]
         public string Body { get; set; }
-        public byte[] Image { get; set; }
-        public int Secret { get; set; }
-        public DateTime PublishDate { get; set; }
+
+        [Required(ErrorMessage = "Secret is required.")]
+        public string Secret { get; set; }
     }
 }

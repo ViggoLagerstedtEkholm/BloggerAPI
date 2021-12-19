@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UniShareAPI.Models.Relations;
 
@@ -11,9 +12,10 @@ using UniShareAPI.Models.Relations;
 namespace Blogger.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20211218154900_secret")]
+    partial class secret
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,6 +36,7 @@ namespace Blogger.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<byte[]>("Image")
+                        .IsRequired()
                         .HasColumnType("varbinary(max)");
 
                     b.Property<string>("Text")
@@ -49,7 +52,7 @@ namespace Blogger.Migrations
                     b.ToTable("Blog");
                 });
 
-            modelBuilder.Entity("Blogger.Relations.BruteForcePrevent", b =>
+            modelBuilder.Entity("Blogger.Relations.Secret", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -60,25 +63,12 @@ namespace Blogger.Migrations
                     b.Property<int>("Attempts")
                         .HasColumnType("int");
 
-                    b.Property<int>("Tries")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("BruteForcePrevent");
-                });
-
-            modelBuilder.Entity("Blogger.Relations.Secret", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Tries")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
